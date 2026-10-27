@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' data: blob:; connect-src 'self' data: blob:; worker-src 'self' blob:; manifest-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Pages — Free Private Block Notes, Offline in Your Browser | S3eidat Tools</title>
+<meta name="description" content="Pages made of blocks: headings, to-dos, toggles, tables, images, code. Nested sidebar, Ctrl+K search, trash, Markdown/HTML/PDF export and a full backup. Free, offline, nothing uploaded.">
+<meta property="og:title" content="Pages — free, private block notes">
+<meta property="og:description" content="Block-based pages that live only in your browser. Works offline, exports everything.">
+<link rel="icon" href="kit/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="app.css">
+<script src="kit/kit.js"></script>
+<script src="lib/jszip.min.js"></script>
+<script src="model.js"></script>
+<script src="db.js"></script>
+<script src="io.js"></script>
+<script src="ui.js"></script>
+<script src="editor.js"></script>
+<!--s3:seo-->
+<link rel="canonical" href="https://s3eidat.github.io/pages/">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d0f12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="S3eidat Tools">
+<meta property="og:url" content="https://s3eidat.github.io/pages/">
+<meta property="og:image" content="https://s3eidat.github.io/pages/screenshot.png">
+<meta property="og:image:width" content="1280"><meta property="og:image:height" content="800">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Pages — Notes and docs with blocks, all private">
+<meta name="twitter:description" content="Notes and docs with blocks, all private. Free, private and runs 100% in your browser: no sign-up, no uploads.">
+<meta name="twitter:image" content="https://s3eidat.github.io/pages/screenshot.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Pages", "url": "https://s3eidat.github.io/pages/", "description": "Notes and docs with blocks, all private. Free, private and runs 100% in your browser: no sign-up, no uploads.", "applicationCategory": "UtilitiesApplication", "operatingSystem": "Any (web browser)", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "image": "https://s3eidat.github.io/pages/screenshot.png", "author": {"@type": "Person", "name": "s3eidat", "url": "https://github.com/s3eidat"}}</script>
+<!--/s3:seo-->
+</head>
+<body data-tool="pages">
+<main class="pg-main">
+  <h1 class="pg-sr">Pages: private notes and docs made of blocks</h1>
+  <div class="pg-app">
+    <aside class="pg-side" id="side" aria-label="Your pages">
+      <div class="pg-side-top">
+        <div class="pg-ws">
+          <span class="pg-ws-ic" aria-hidden="true">📒</span>
+          <span class="pg-ws-t"><b>My pages</b><small>Stored on this device</small></span>
+          <button type="button" class="pg-iconbtn" id="side-hide" title="Hide sidebar (Ctrl+\)" aria-label="Hide sidebar">«</button>
+        </div>
+        <button type="button" class="pg-side-btn" id="search-btn"><span aria-hidden="true">🔍</span><span class="grow">Search</span><kbd>Ctrl K</kbd></button>
+        <button type="button" class="pg-side-btn" id="new-btn"><span aria-hidden="true">＋</span><span class="grow">New page</span><kbd>Alt N</kbd></button>
+      </div>
+      <nav class="pg-tree-wrap" id="tree-wrap" aria-label="Page tree">
+        <div class="pg-sec" id="fav-sec" hidden>
+          <div class="pg-sec-h"><span>Favourites</span></div>
+          <ul class="pg-tree" id="favs" role="tree" aria-label="Favourites"></ul>
+        </div>
+        <div class="pg-sec">
+          <div class="pg-sec-h"><span>Pages</span><button type="button" class="pg-row-b" id="add-top" title="New page" aria-label="New page">+</button></div>
+          <ul class="pg-tree" id="tree" role="tree" aria-label="Pages"></ul>
+        </div>
+      </nav>
+      <div class="pg-side-foot">
+        <button type="button" class="pg-side-btn" id="trash-btn"><span aria-hidden="true">🗑</span><span class="grow">Trash</span><span class="pg-count" id="trash-count"></span></button>
+        <button type="button" class="pg-side-btn" id="data-btn"><span aria-hidden="true">💾</span><span class="grow">Backup &amp; import</span></button>
+        <button type="button" class="pg-side-btn" id="keys-btn"><span aria-hidden="true">⌨</span><span class="grow">Shortcuts</span></button>
+      </div>
+    </aside>
+    <div class="pg-scrim" id="scrim"></div>
+    <section class="pg-view" aria-label="Page">
+      <div class="pg-bar no-print">
+        <button type="button" class="pg-iconbtn pg-narrow" id="menu-btn" aria-label="Show pages">☰</button>
+        <button type="button" class="pg-iconbtn pg-showside" id="side-show" title="Show sidebar (Ctrl+\)" aria-label="Show sidebar">»</button>
+        <nav class="pg-crumbs" id="crumbs" aria-label="Breadcrumb"></nav>
+        <span class="pg-status" id="status" role="status">Loading…</span>
+        <button type="button" class="pg-iconbtn" id="undo-btn" title="Undo (Ctrl+Z)" aria-label="Undo">↶</button>
+        <button type="button" class="pg-iconbtn" id="redo-btn" title="Redo (Ctrl+Y)" aria-label="Redo">↷</button>
+        <button type="button" class="pg-iconbtn" id="fav-btn" aria-pressed="false" title="Add to favourites" aria-label="Favourite">☆</button>
+        <button type="button" class="pg-iconbtn" id="more-btn" title="Page options: style, export, trash" aria-label="Page options">⋯</button>
+      </div>
+      <div class="pg-scroll" id="scroll">
+        <div class="pg-cover" id="cover" hidden>
+          <div class="pg-cover-act no-print">
+            <button type="button" class="btn small" id="cover-change">Change cover</button>
+            <button type="button" class="btn small" id="cover-remove">Remove</button>
+          </div>
+        </div>
+        <article class="pg-doc" id="doc">
+          <div class="pg-head">
+            <button type="button" class="pg-icon" id="icon" title="Change icon" hidden></button>
+            <div class="pg-head-act no-print">
+              <button type="button" class="pg-ghostbtn" id="add-icon">☺ Add icon</button>
+              <button type="button" class="pg-ghostbtn" id="add-cover">▧ Add cover</button>
+            </div>
+            <div class="pg-title" id="title" contenteditable="true" dir="auto" role="textbox" aria-label="Page title" data-ph="Untitled" spellcheck="true"></div>
+          </div>
+          <div class="pg-blocks" id="blocks" aria-label="Page content"></div>
+          <div class="pg-tail no-print" id="tail" title="Click to add a block"></div>
+          <div class="pg-pfoot faint no-print" id="pfoot"></div>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <section class="pg-about">
+    <h2>A private notebook made of blocks</h2>
+    <div class="grid-3">
+      <div><h3>Write with blocks</h3><p>Headings, bulleted, numbered and to-do lists, toggles, quotes, callouts, dividers, code, tables, images and links to other pages. Type <kbd>/</kbd> or Markdown like <code># </code>, <code>- </code>, <code>[] </code>.</p></div>
+      <div><h3>Organise and find</h3><p>Nest pages as deep as you like in the sidebar, drag to reorder, star favourites, give pages an icon and a cover, and find any word with <kbd>Ctrl</kbd>+<kbd>K</kbd>. Arabic and right-to-left text just work.</p></div>
+      <div><h3>Yours, offline, exportable</h3><p>Pages and images are saved in this browser and the app works with no connection. Export a page to Markdown, HTML or PDF, or download one backup .zip that restores everything.</p></div>
+    </div>
+    <p class="faint">Nothing is uploaded: no account, no server, no analytics. Clearing this site's data in your browser deletes your pages, so keep a backup.</p>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
